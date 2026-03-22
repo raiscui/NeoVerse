@@ -1,0 +1,94 @@
+[workspace]
+authors = ["NeoVerse Authors"]
+channels = ["conda-forge"]
+description = "NeoVerse dependency and workflow management via pixi."
+name = "neoverse"
+platforms = ["linux-64"]
+readme = "README.md"
+requires-pixi = ">=0.65.0"
+version = "0.1.0"
+
+[activation]
+# 让 pixi 启动的所有命令默认走 hf-mirror.
+# 如果用户已经在外部显式设置了 HF_ENDPOINT, 运行时会继续尊重该覆盖值.
+env = { HF_ENDPOINT = "https://hf-mirror.com" }
+
+[system-requirements]
+cuda = "12"
+
+[tasks]
+# 常用入口直接收敛成 pixi task, 避免环境切换时手动记命令.
+app = "python app.py"
+app-low-vram = "python app.py --low_vram"
+inference-help = "python inference.py --help"
+download-neoverse = "hf download Yuppie1204/NeoVerse --local-dir models/NeoVerse"
+download-neoverse-modelscope = "modelscope download --model Yuppie1204/NeoVerse --local_dir models/NeoVerse"
+
+[dependencies]
+# 这些工具负责提供 Python 解释器与源码构建时的基础能力.
+python = "3.10.*"
+ffmpeg = "*"
+pip = ">=24,<26"
+setuptools = ">=75,<81"
+wheel = ">=0.45,<1"
+
+[pypi-options]
+index-url = "https://pypi.org/simple"
+
+[pypi-dependencies]
+# ---------------------------------------------------------------------------
+# 基础 Python 依赖
+# ---------------------------------------------------------------------------
+accelerate = "*"
+addict = "*"
+decord = "*"
+deepspeed = "==0.16.7"
+e3nn = "*"
+einops = "*"
+evo = "*"
+ftfy = "*"
+gradio = "*"
+gsplat = "==1.5.3"
+huggingface-hub = "*"
+imageio = "*"
+imageio-ffmpeg = "*"
+jaxtyping = "*"
+matplotlib = "*"
+modelscope = "*"
+moviepy = "==1.0.3"
+numpy = "*"
+omegaconf = "*"
+opencv-python = "*"
+pandas = "*"
+peft = "*"
+pillow = "*"
+safetensors = "*"
+scipy = "*"
+sentencepiece = "*"
+tensorboard = "*"
+tqdm = "*"
+transformers = "==4.57.6"
+trimesh = "*"
+typing-extensions = "*"
+
+[feature.cuda121.pypi-options]
+# torch-scatter 需要从 PYG 的轮子页安装, 避免回退到源码构建.
+find-links = [{ url = "https://data.pyg.org/whl/torch-2.3.1+cu121.html" }]
+
+[feature.cuda121.pypi-dependencies]
+torch = { version = "==2.3.1+cu121", index = "https://download.pytorch.org/whl/cu121" }
+torch-scatter = "==2.1.2+pt23cu121"
+torchvision = { version = "==0.18.1+cu121", index = "https://download.pytorch.org/whl/cu121" }
+
+[feature.cuda128.pypi-options]
+find-links = [{ url = "https://data.pyg.org/whl/torch-2.7.1+cu128.html" }]
+
+[feature.cuda128.pypi-dependencies]
+torch = { version = "==2.7.1+cu128", index = "https://download.pytorch.org/whl/cu128" }
+torch-scatter = "==2.1.2+pt27cu128"
+torchvision = { version = "==0.22.1+cu128", index = "https://download.pytorch.org/whl/cu128" }
+
+[environments]
+default = ["cuda128"]
+cuda121 = ["cuda121"]
+cuda128 = ["cuda128"]

@@ -3,5 +3,8 @@ __pycache__
 .vscode
 .gradio
 .claude
+.direnv
+.pixi
 
 /outputs
+models/

@@ -39,33 +39,43 @@ https://github.com/user-attachments/assets/4c957bd7-64e1-4a7e-9993-136740d911fe
 
 ### Step 1: Install Dependencies
 
-We have tested NeoVerse on CUDA 12.1 with PyTorch 2.3.1 and CUDA 12.8 with PyTorch 2.7.1.
+NeoVerse now uses `pixi` as the primary dependency manager. We have tested the following environment combinations:
+
+| Environment | CUDA | PyTorch | Torchvision | torch-scatter |
+|------------|------|---------|-------------|---------------|
+| `default` / `cuda128` | 12.8 | `2.7.1+cu128` | `0.22.1+cu128` | `2.1.2+pt27cu128` |
+| `cuda121` | 12.1 | `2.3.1+cu121` | `0.18.1+cu121` | `2.1.2+pt23cu121` |
 
 ```bash
 git clone https://github.com/IamCreateAI/NeoVerse.git
 cd NeoVerse
-conda create -n neoverse python=3.10 -y
-conda activate neoverse
 
-# For CUDA 12.1
-pip install torch==2.3.1 torchvision==0.18.1 --index-url https://download.pytorch.org/whl/cu121
-pip install -r requirements.txt
-pip install torch-scatter -f https://data.pyg.org/whl/torch-2.3.1+cu121.html
-pip install --no-build-isolation git+https://github.com/nerfstudio-project/gsplat.git
+# Optional: load the default HF mirror endpoint if you use direnv
+direnv allow
 
-# For CUDA 12.8
-pip install torch==2.7.1 torchvision==0.22.1 --index-url https://download.pytorch.org/whl/cu128
-pip install -r requirements.txt
-pip install torch-scatter -f https://data.pyg.org/whl/torch-2.7.1+cu128.html
-pip install --no-build-isolation git+https://github.com/nerfstudio-project/gsplat.git
+# Default environment: CUDA 12.8 + PyTorch 2.7.1
+pixi install
+pixi shell
+
+# Or use the CUDA 12.1 environment instead
+pixi install -e cuda121
+pixi shell -e cuda121
 ```
+
+`pixi.toml` uses the published `gsplat==1.5.3` wheel. We verified that this wheel already contains the `rendering`, `strategy`, and `_torch_impl` modules used by NeoVerse, while avoiding the build-time `torch` detection problem that occurs with the Git source package under `pixi`.
 
 ### Step 2: Download Model Checkpoints
 
+By default, `pixi` activation and `.envrc` set `HF_ENDPOINT=https://hf-mirror.com`, so large Hugging Face downloads go through the mirror unless you override it.
+
 ```bash
-hf download Yuppie1204/NeoVerse --local-dir models/NeoVerse
+pixi run download-neoverse
+
 # Or using ModelScope
-modelscope download --model Yuppie1204/NeoVerse --local_dir models/NeoVerse
+pixi run download-neoverse-modelscope
+
+# If you are not using pixi or direnv, pass the mirror explicitly
+HF_ENDPOINT=https://hf-mirror.com hf download Yuppie1204/NeoVerse --local-dir models/NeoVerse
 ```
 
 Expected directory structure:
@@ -85,6 +95,8 @@ models/NeoVerse/
 ## Usage
 
 We provide two ways to try NeoVerse: a **command-line inference script** and an **interactive Gradio demo**.
+
+All `python ...` commands below assume you are already inside a matching `pixi shell`. If you prefer one-shot commands, prepend them with `pixi run -e cuda128` or `pixi run -e cuda121`.
 
 ### Inference Script
 
@@ -200,10 +212,10 @@ python inference.py --trajectory_file my_trajectory.json --validate_only
 Launch the web UI:
 
 ```bash
-python app.py
+pixi run app
 
 # With low-VRAM mode
-python app.py --low_vram
+pixi run app-low-vram
 ```
 
 The demo walks you through four steps:
@@ -220,8 +232,8 @@ NeoVerse also supports alternative reconstructors such as [Depth Anything 3](htt
 Download the Depth Anything 3 checkpoint:
 
 ```bash
-# Download model.safetensors from Hugging Face
-wget https://huggingface.co/depth-anything/DA3-GIANT-1.1/resolve/main/model.safetensors -O models/da3_giant_1.1.safetensors
+# Download model.safetensors from the HF mirror
+wget https://hf-mirror.com/depth-anything/DA3-GIANT-1.1/resolve/main/model.safetensors -O models/da3_giant_1.1.safetensors
 ```
 
 Then pass it via `--reconstructor_path`:
